@@ -4,10 +4,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" />
 
-    <!-- Generated with Sphinx 7.3.7 and Furo 2024.01.29 -->
+    <!-- Generated with Sphinx 7.4.7 and Furo 2024.01.29 -->
         <title>matplotlib.backends.backend_qtagg - Qiskit Metal 0.1.5 0.1.5</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=135e06be" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=362ab14a" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/qiskit-sphinx-theme.css?v=fe84956c" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/qiskit-ecosystem.css?v=745c5aa7" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=36a5483c" />
@@ -551,9 +551,9 @@
 
 <span class="kn">from</span> <span class="nn">matplotlib.transforms</span> <span class="kn">import</span> <span class="n">Bbox</span>
 
-<span class="kn">from</span> <span class="nn">.qt_compat</span> <span class="kn">import</span> <span class="n">QT_API</span><span class="p">,</span> <span class="n">_enum</span>
+<span class="kn">from</span> <span class="nn">.qt_compat</span> <span class="kn">import</span> <span class="n">QT_API</span><span class="p">,</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtGui</span>
 <span class="kn">from</span> <span class="nn">.backend_agg</span> <span class="kn">import</span> <span class="n">FigureCanvasAgg</span>
-<span class="kn">from</span> <span class="nn">.backend_qt</span> <span class="kn">import</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtGui</span><span class="p">,</span> <span class="n">_BackendQT</span><span class="p">,</span> <span class="n">FigureCanvasQT</span>
+<span class="kn">from</span> <span class="nn">.backend_qt</span> <span class="kn">import</span> <span class="n">_BackendQT</span><span class="p">,</span> <span class="n">FigureCanvasQT</span>
 <span class="kn">from</span> <span class="nn">.backend_qt</span> <span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F401 # pylint: disable=W0611</span>
     <span class="n">FigureManagerQT</span><span class="p">,</span> <span class="n">NavigationToolbar2QT</span><span class="p">)</span>
 
@@ -602,7 +602,7 @@
 
             <span class="n">painter</span><span class="o">.</span><span class="n">eraseRect</span><span class="p">(</span><span class="n">rect</span><span class="p">)</span>  <span class="c1"># clear the widget canvas</span>
             <span class="n">qimage</span> <span class="o">=</span> <span class="n">QtGui</span><span class="o">.</span><span class="n">QImage</span><span class="p">(</span><span class="n">ptr</span><span class="p">,</span> <span class="n">buf</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">buf</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                                  <span class="n">_enum</span><span class="p">(</span><span class="s2">&quot;QtGui.QImage.Format&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">Format_RGBA8888</span><span class="p">)</span>
+                                  <span class="n">QtGui</span><span class="o">.</span><span class="n">QImage</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">Format_RGBA8888</span><span class="p">)</span>
             <span class="n">qimage</span><span class="o">.</span><span class="n">setDevicePixelRatio</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device_pixel_ratio</span><span class="p">)</span>
             <span class="c1"># set origin using original QT coordinates</span>
             <span class="n">origin</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QPoint</span><span class="p">(</span><span class="n">rect</span><span class="o">.</span><span class="n">left</span><span class="p">(),</span> <span class="n">rect</span><span class="o">.</span><span class="n">top</span><span class="p">())</span>
@@ -618,7 +618,12 @@
 
     <span class="k">def</span> <span class="nf">print_figure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">print_figure</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+        <span class="c1"># In some cases, Qt will itself trigger a paint event after closing the file</span>
+        <span class="c1"># save dialog. When that happens, we need to be sure that the internal canvas is</span>
+        <span class="c1"># re-drawn. However, if the user is using an automatically-chosen Qt backend but</span>
+        <span class="c1"># saving with a different backend (such as pgf), we do not want to trigger a</span>
+        <span class="c1"># full draw in Qt, so just set the flag for next time.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_draw_pending</span> <span class="o">=</span> <span class="kc">True</span>
 
 
 <span class="nd">@_BackendQT</span><span class="o">.</span><span class="n">export</span>

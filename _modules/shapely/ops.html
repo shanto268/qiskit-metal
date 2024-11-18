@@ -4,10 +4,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" />
 
-    <!-- Generated with Sphinx 7.3.7 and Furo 2024.01.29 -->
+    <!-- Generated with Sphinx 7.4.7 and Furo 2024.01.29 -->
         <title>shapely.ops - Qiskit Metal 0.1.5 0.1.5</title>
       <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=362ab14a" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/qiskit-sphinx-theme.css?v=fe84956c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/qiskit-ecosystem.css?v=745c5aa7" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=36a5483c" />
@@ -862,11 +862,8 @@
 
 
 <span class="k">def</span> <span class="nf">snap</span><span class="p">(</span><span class="n">g1</span><span class="p">,</span> <span class="n">g2</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Snap one geometry to another with a given tolerance</span>
-
-<span class="sd">    Vertices of the first geometry are snapped to vertices of the second</span>
-<span class="sd">    geometry. The resulting snapped geometry is returned. The input geometries</span>
-<span class="sd">    are not modified.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Snaps an input geometry (g1) to reference (g2) geometry&#39;s vertices.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -877,14 +874,9 @@
 <span class="sd">    tolerance : float</span>
 <span class="sd">        The snapping tolerance</span>
 
-<span class="sd">    Example</span>
-<span class="sd">    -------</span>
-<span class="sd">    &gt;&gt;&gt; square = Polygon([(1,1), (2, 1), (2, 2), (1, 2), (1, 1)])</span>
-<span class="sd">    &gt;&gt;&gt; line = LineString([(0,0), (0.8, 0.8), (1.8, 0.95), (2.6, 0.5)])</span>
-<span class="sd">    &gt;&gt;&gt; result = snap(line, square, 0.5)</span>
-<span class="sd">    &gt;&gt;&gt; result.wkt</span>
-<span class="sd">    &#39;LINESTRING (0 0, 1 1, 2 1, 2.6 0.5)&#39;</span>
+<span class="sd">    Refer to :func:`shapely.snap` for full documentation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">return</span> <span class="n">shapely</span><span class="o">.</span><span class="n">snap</span><span class="p">(</span><span class="n">g1</span><span class="p">,</span> <span class="n">g2</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">)</span>
 
 
@@ -1203,9 +1195,9 @@
         <span class="n">start_dist</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># to avoid duplicating the first vertex</span>
 
     <span class="k">if</span> <span class="n">reverse</span><span class="p">:</span>
-        <span class="n">vertex_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">end_point</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">end_point</span><span class="o">.</span><span class="n">y</span><span class="p">)]</span>
+        <span class="n">vertex_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="o">*</span><span class="n">end_point</span><span class="o">.</span><span class="n">coords</span><span class="p">)]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">vertex_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">start_point</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">start_point</span><span class="o">.</span><span class="n">y</span><span class="p">)]</span>
+        <span class="n">vertex_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="o">*</span><span class="n">start_point</span><span class="o">.</span><span class="n">coords</span><span class="p">)]</span>
 
     <span class="n">coords</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">geom</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
     <span class="n">current_distance</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1218,11 +1210,11 @@
         <span class="n">current_distance</span> <span class="o">+=</span> <span class="p">((</span><span class="n">p2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">p1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">p2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">p1</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
 
     <span class="k">if</span> <span class="n">reverse</span><span class="p">:</span>
-        <span class="n">vertex_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start_point</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">start_point</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="n">vertex_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="o">*</span><span class="n">start_point</span><span class="o">.</span><span class="n">coords</span><span class="p">))</span>
         <span class="c1"># reverse direction result</span>
         <span class="n">vertex_list</span> <span class="o">=</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">vertex_list</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">vertex_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">end_point</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">end_point</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="n">vertex_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="o">*</span><span class="n">end_point</span><span class="o">.</span><span class="n">coords</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">LineString</span><span class="p">(</span><span class="n">vertex_list</span><span class="p">)</span>
 
