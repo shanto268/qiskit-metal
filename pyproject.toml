@@ -1,0 +1,80 @@
+[project]
+    name = "qiskit_metal"
+    description = "Qiskit Metal | for quantum device design & analysis"
+    authors = [
+        { name = "Qiskit Metal Development Team", email = "qiskit@us.ibm.com" },
+    ]
+    classifiers = [
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: MacOS",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Topic :: Scientific/Engineering",
+    ]
+    keywords = [ "eda", "qiskit", "quantum", "sdk" ]
+    license = "Apache-2.0"
+    license-files = [ "LICENSE.txt" ]
+    readme = { file = "README.md", content-type = "text/markdown" }
+    requires-python = ">=3.10"
+    urls = { bugtracker = "https://github.com/Qiskit/qiskit-metal/issues", documentation = "https://qiskit-community.github.io/qiskit-metal/", source = "https://github.com/Qiskit/qiskit-metal" }
+    version = "0.5.0"
+    dependencies = [
+        "addict>=2.4.0",
+        "gdstk>=0.9",
+        "geopandas>=0.12.2",
+        "matplotlib>=3.7.0",
+        "numpy>=1.24.2,<2",
+        "pandas>=1.5.3",
+        "pint~=0.20.1",
+        "pyEPR-quantum>=0.9.0",
+        "pygments>=2.14.0",
+        "pyside6>=6.9.0",
+        "qdarkstyle~=3.1",
+        "qutip>=4.7.1",
+        "scipy>=1.10.0",
+        "shapely~=2.0.1",
+        "scqubits>=3.1.0,<=3.4.0",
+        "gmsh~=4.11.1",
+        "pyaedt>=0.6.46,<0.10.0; platform_system == 'Windows'",
+        "pyyaml>=6.0",
+        "cython<3.0.0",
+        "descartes>=1.1.0",
+    ]
+
+[build-system]
+    requires      = [ "uv_build>=0.8.4,<0.9.0" ]
+    build-backend = "uv_build"
+
+# Accounting for flat layout
+[tool.uv.build-backend]
+    module-name = "qiskit_metal"
+    module-root = ""
+
+[dependency-groups]
+    docs = [
+        "nbsphinx>=0.9.7",
+        "numpydoc>=1.9.0",
+        "qiskit-sphinx-theme>=2.0.0",
+        "sphinx>=8.1.3",
+        "sphinx-intl>=2.3.2",
+    ]
+    lint = [
+        "ruff>=0.12.8",
+    ]
+    test = [
+        "pytest>=8.4.1",
+        "pytest-rich>=0.2.0",
+    ]
+
+
+[tool.pytest.ini_options]
+    minversion = "6.0"
+    addopts    = "--rich --ignore=qiskit_metal/tests/test_renderers.py"
+    testpaths  = [ "qiskit_metal/tests/" ]
