@@ -128,15 +128,13 @@ def is_using_ipython():
 
 
 def is_building_docs():
-    """Checks for the existance of the .buildingdocs file which is only present
-    when building the docs.
+    """Checks if the environment variable METAL_BUILD_DOCS is set.
 
     Returns:
-        bool: True if .buildingdocs exists
+        bool: True if METAL_BUILD_DOCS is set
     """
-    from pathlib import Path  # pylint: disable=import-outside-toplevel
-    build_docs_file = Path(__file__).parent.parent / "docs" / ".buildingdocs"
-    return Path.exists(build_docs_file)
+
+    return bool(os.environ.get('METAL_BUILD_DOCS', False))
 
 
 _ipython = is_using_ipython()

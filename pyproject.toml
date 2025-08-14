@@ -22,7 +22,7 @@
     license = "Apache-2.0"
     license-files = [ "LICENSE.txt" ]
     readme = { file = "README.md", content-type = "text/markdown" }
-    requires-python = ">=3.10"
+    requires-python = ">=3.10,<3.13"
     urls = { bugtracker = "https://github.com/Qiskit/qiskit-metal/issues", documentation = "https://qiskit-community.github.io/qiskit-metal/", source = "https://github.com/Qiskit/qiskit-metal" }
     version = "0.5.0"
     dependencies = [
@@ -42,7 +42,7 @@
         "shapely~=2.0.1",
         "scqubits>=3.1.0,<=3.4.0",
         "gmsh~=4.11.1",
-        "pyaedt>=0.6.46,<0.10.0; platform_system == 'Windows'",
+        "pyaedt>=0.19",
         "pyyaml>=6.0",
         "cython<3.0.0",
         "descartes>=1.1.0",
@@ -59,22 +59,102 @@
 
 [dependency-groups]
     docs = [
-        "nbsphinx>=0.9.7",
-        "numpydoc>=1.9.0",
-        "qiskit-sphinx-theme>=2.0.0",
-        "sphinx>=8.1.3",
-        "sphinx-intl>=2.3.2",
+        "nbsphinx>=0.8.6",
+        "numpydoc>=1.5.0",
+        "qiskit-sphinx-theme>=1.16.0",
+        "sphinx>=6.0.0",
+        "sphinx-intl>=2.1.0",
     ]
     lint = [
-        "ruff>=0.12.8",
+        "pylint>=3.3.8",
+        "yapf>=0.43.0",
     ]
-    test = [
-        "pytest>=8.4.1",
-        "pytest-rich>=0.2.0",
-    ]
+    test = [ "pytest>=8.4.1", "pytest-rich>=0.2.0" ]
 
 
 [tool.pytest.ini_options]
     minversion = "6.0"
     addopts    = "--rich --ignore=qiskit_metal/tests/test_renderers.py"
     testpaths  = [ "qiskit_metal/tests/" ]
+
+
+[tool.tox]
+    requires = [ "tox>=4", "tox-uv>=1.27" ]
+    env_list = [ "py3.12", "py3.11", "py3.10", "lint", "docs" ]
+    labels   = { test = [ "py3.12", "py3.11", "py3.10" ] }
+
+
+[tool.tox.env_run_base]
+    description       = "Run tests against the wheel using pytest"
+    packages          = [ "wheel" ]
+    set_env           = { VIRTUAL_ENV = "{envdir}", LANGUAGE = "en_US", QISKIT_METAL_HEADLESS = "1", LC_ALL = "en_US.utf-8" }
+    dependency_groups = [ "test" ]
+    commands          = [ [ "python", "-m", "pytest", { replace = "posargs", default = [ "" ], extend = true } ] ]
+
+
+[tool.tox.env.lint]
+    base_python = [ "py3.10" ]
+    skip_install = true
+    dependency_groups = [ "lint" ]
+    commands = [
+        [ "yapf", "--diff", "--recursive", "--style", "{toxinidir}/.style.yapf", "qiskit_metal" ],
+        [ "pylint", "-rn", "--rcfile={toxinidir}/.pylintrc", "qiskit_metal" ],
+    ]
+
+[tool.tox.env.docs]
+    description = "Build the documentation using sphinx"
+    base_python = [ "py3.10" ]
+    pass_env    = [ "DOCS_FROM_MASTER", "QISKIT_DOCS_BUILD_TUTORIALS" ]
+    set_env     = { METAL_BUILD_DOCS = "True" }
+    dependency_groups = [ "docs" ]
+    commands = [
+        [
+            "sphinx-build",
+            "-b",
+            "html",
+            "-j",
+            "auto",
+            "{toxinidir}/docs/",
+            "{toxinidir}/docs/_build/html",
+            { replace = "posargs", default = [ "" ], extend = true },
+        ],
+    ]
+
+
+[tool.tox.env.gettext]
+    description = "Build the documentation using sphinx"
+    base_python = [ "py3.9" ]
+    set_env     = { METAL_BUILD_DOCS = "True" }
+    dependency_groups = [ "docs" ]
+    commands = [
+        [
+            "sphinx-build",
+            "-b",
+            "gettext",
+            "-j",
+            "auto",
+            "{toxinidir}/docs/",
+            "{toxinidir}/docs/_build/gettext",
+            { replace = "posargs", default = [ "" ], extend = true },
+        ],
+        [
+            "sphinx-intl",
+            "-c",
+            "{toxinidir}/docs/conf.py",
+            "update",
+            "-p",
+            "{toxinidir}/docs/_build/gettext",
+            "-l",
+            "en",
+            "-d",
+            "{toxinidir}/docs/locale",
+        ],
+    ]
+
+[tool.tox.env.docs-clean]
+    description = "Clean the documentation build"
+    skip_install = true
+    allowlist_externals = [ "rm" ]
+    commands = [
+        [ "rm", "-rf", "{toxinidir}/docs/stubs/", "{toxinidir}/docs/_build/" ],
+    ]
