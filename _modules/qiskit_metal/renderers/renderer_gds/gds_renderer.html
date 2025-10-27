@@ -2139,7 +2139,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">chip_info</span><span class="p">[</span><span class="n">chip_name</span><span class="p">][</span><span class="n">chip_layer</span><span class="p">][</span><span class="s2">&quot;q_subtract_true&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;not&quot;</span><span class="p">,</span>
                 <span class="n">layer</span><span class="o">=</span><span class="n">chip_layer</span><span class="p">,</span>
-                <span class="n">datatype</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                <span class="n">datatype</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">,</span>
             <span class="p">)</span>
 
@@ -2147,7 +2147,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">design</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                     <span class="s2">&quot;There is no table named diff_geometry to write.&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">ground_cell</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="o">*</span><span class="n">diff_geometry</span><span class="p">)</span>
+                <span class="n">ground_plane_cell_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ground_</span><span class="si">{</span><span class="n">chip_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">chip_layer</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">ground_plane_cell</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">new_cell</span><span class="p">(</span><span class="n">ground_plane_cell_name</span><span class="p">)</span>
+                <span class="n">ground_plane_cell</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="o">*</span><span class="n">diff_geometry</span><span class="p">)</span>
+                <span class="n">ground_cell</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">gdstk</span><span class="o">.</span><span class="n">Reference</span><span class="p">(</span><span class="n">ground_plane_cell</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_handle_q_subtract_false</span><span class="p">(</span><span class="n">chip_name</span><span class="p">,</span> <span class="n">chip_layer</span><span class="p">,</span> <span class="n">ground_cell</span><span class="p">)</span>
         <span class="n">QGDSRenderer</span><span class="o">.</span><span class="n">_add_groundcell_to_chip_only_top</span><span class="p">(</span><span class="n">lib</span><span class="p">,</span> <span class="n">chip_only_top</span><span class="p">,</span>
@@ -2898,7 +2901,7 @@
             
             <a href="https://github.com/pradyunsg/furo">Furo</a>
             <div class="last-updated">
-              Last updated on 2025/10/21</div>
+              Last updated on 2025/10/27</div>
           </div>
           <div class="right-details">
             
