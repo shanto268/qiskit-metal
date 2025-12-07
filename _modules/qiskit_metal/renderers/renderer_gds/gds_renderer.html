@@ -468,8 +468,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">itemgetter</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span> <span class="k">as</span> <span class="n">DictType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">gdstk</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span>
@@ -2311,37 +2312,84 @@
 
     <span class="c1">############</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_import_junction_gds_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lib</span><span class="p">:</span> <span class="n">gdstk</span><span class="o">.</span><span class="n">Library</span><span class="p">,</span>
-                                  <span class="n">directory_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="QGDSRenderer.import_junction_gds_file">
+<a class="viewcode-back" href="../../../../stubs/qiskit_metal.renderers.QGDSRenderer.html#qiskit_metal.renderers.QGDSRenderer.import_junction_gds_file">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">import_junction_gds_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                 <span class="n">lib</span><span class="p">:</span> <span class="n">gdstk</span><span class="o">.</span><span class="n">Library</span><span class="p">,</span>
+                                 <span class="n">directory_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Import the file which contains all junctions for design.</span>
+
 <span class="sd">        If the file has already been imported, just return True.</span>
 
 <span class="sd">        When the design has junctions on multiple chips,</span>
-<span class="sd">        we only need to import file once to get ALL of the junctions.</span>
+<span class="sd">        we only need to import the file once to get all of the junction cells.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            lib (gdstk.Library): The library used to export the entire QDesign.</span>
-<span class="sd">            directory_name (str): The path of directory to read file with junctions.</span>
+<span class="sd">            lib: Main GDS library used by this renderer.</span>
+<span class="sd">            directory_name: Directory path where the junction GDS file is expected.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            bool: True if file imported to GDS lib or previously imported.</span>
-<span class="sd">                   False if file not found.</span>
+<span class="sd">            True if the file was imported (or was already imported), False otherwise.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">imported_junction_gds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># auto get dir name</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;No path_filename specified for junction GDS import.&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_</span><span class="p">,</span> <span class="n">directory_name</span> <span class="o">=</span> <span class="n">can_write_to_path</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span><span class="p">)</span>
+
+        <span class="c1"># TODO: Validate this works as intended with new gdstk.read_gds</span>
+        <span class="c1"># already imported once in this renderer</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">imported_junction_gds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span><span class="p">):</span>
-            <span class="n">lib</span><span class="o">.</span><span class="n">read_gds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s2">&quot;convert&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">imported_junction_gds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span>
-            <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span><span class="p">):</span>
             <span class="n">message_str</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="sa">f</span><span class="s1">&#39;Not able to find file:&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span><span class="si">}</span><span class="s1">&quot;.  &#39;</span>
                 <span class="sa">f</span><span class="s2">&quot;Not used to replace junction.&quot;</span>
                 <span class="sa">f</span><span class="s1">&#39; Checked directory:&quot;</span><span class="si">{</span><span class="n">directory_name</span><span class="si">}</span><span class="s1">&quot;.&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">message_str</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># read external library (with its own unit/precision)</span>
+        <span class="n">imported_lib</span> <span class="o">=</span> <span class="n">gdstk</span><span class="o">.</span><span class="n">read_gds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span><span class="p">)</span>
+        <span class="n">imported_cells</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">imported_lib</span><span class="p">,</span> <span class="s2">&quot;cells&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">imported_cells</span><span class="p">:</span>
+            <span class="n">message_str</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Imported file &quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span><span class="si">}</span><span class="s1">&quot; contains no cells.  &#39;</span>
+                <span class="s2">&quot;Not used to replace junction.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">message_str</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># replicate old gdspy `units=&quot;convert&quot;` behavior:</span>
+        <span class="c1"># # rescale imported cells so their physical size matches this renderer&#39;s lib.</span>
+        <span class="c1"># # coord_target = coord_imported * (imported_lib.unit / lib.unit)</span>
+        <span class="c1"># scale = imported_lib.unit / lib.unit</span>
+
+        <span class="c1"># # only do work if there is a real difference</span>
+        <span class="c1"># if not math.isclose(scale, 1.0, rel_tol=1e-12, abs_tol=0.0):</span>
+        <span class="c1">#     self.logger.info(</span>
+        <span class="c1">#         &quot;Rescaling imported junction library from unit=%g to unit=%g &quot;</span>
+        <span class="c1">#         &quot;(scale factor=%g).&quot;,</span>
+        <span class="c1">#         imported_lib.unit,</span>
+        <span class="c1">#         lib.unit,</span>
+        <span class="c1">#         scale,</span>
+        <span class="c1">#     )</span>
+        <span class="c1">#     for cell in imported_cells:</span>
+        <span class="c1">#         # scale in-place; affects polygons, paths, labels, references</span>
+        <span class="c1">#         cell.scale(scale, scale)</span>
+
+        <span class="c1"># merge imported cells into main library, like old lib.read_gds did</span>
+        <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">imported_cells</span><span class="p">:</span>
+            <span class="n">lib</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">imported_junction_gds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">path_filename</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_import_junctions_to_one_cell</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -2375,8 +2423,8 @@
         <span class="n">layers_in_junction_table</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">chip_info</span><span class="p">[</span><span class="n">chip_name</span><span class="p">][</span><span class="s2">&quot;junction&quot;</span><span class="p">][</span><span class="s2">&quot;layer&quot;</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_import_junction_gds_file</span><span class="p">(</span><span class="n">lib</span><span class="o">=</span><span class="n">lib</span><span class="p">,</span>
-                                          <span class="n">directory_name</span><span class="o">=</span><span class="n">directory_name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">import_junction_gds_file</span><span class="p">(</span><span class="n">lib</span><span class="o">=</span><span class="n">lib</span><span class="p">,</span>
+                                         <span class="n">directory_name</span><span class="o">=</span><span class="n">directory_name</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">iter_layer</span> <span class="ow">in</span> <span class="n">layers_in_chip</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_negative_mask</span><span class="p">(</span><span class="n">chip_name</span><span class="p">,</span> <span class="n">iter_layer</span><span class="p">):</span>
                     <span class="c1"># Want to export negative mask</span>
@@ -2882,8 +2930,208 @@
         <span class="n">unique_dict</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">chip</span> <span class="ow">in</span> <span class="n">unique_list</span><span class="p">:</span>
             <span class="n">unique_dict</span><span class="p">[</span><span class="n">chip</span><span class="p">]</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">unique_dict</span></div>
+        <span class="k">return</span> <span class="n">unique_dict</span>
 
+<div class="viewcode-block" id="QGDSRenderer.show_imported_junction_gds">
+<a class="viewcode-back" href="../../../../stubs/qiskit_metal.renderers.QGDSRenderer.html#qiskit_metal.renderers.QGDSRenderer.show_imported_junction_gds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show_imported_junction_gds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;If junction gds file has been imported, show the cells in it.</span>
+<span class="sd">        To use, you may need to first set:</span>
+<span class="sd">        &gt;&gt;&gt; gds.options.path_filename = &quot;../resources/Fake_Junctions.GDS&quot;</span>
+<span class="sd">        This function will read the file again, and print out the cells in it.</span>
+<span class="sd">        It will also render the cells as an SVG inline if run in a Jupyter notebook.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">imported_junction_gds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">imported_lib</span> <span class="o">=</span> <span class="n">gdstk</span><span class="o">.</span><span class="n">read_gds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">imported_junction_gds</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;imported_lib name:&quot;</span><span class="p">,</span> <span class="n">imported_lib</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;imported_lib unit:&quot;</span><span class="p">,</span> <span class="n">imported_lib</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;imported_lib precision:&quot;</span><span class="p">,</span> <span class="n">imported_lib</span><span class="o">.</span><span class="n">precision</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">imported_lib</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">debug_print_cell</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;No junction gds file has been imported. </span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;You can set it with `gds.options.path_filename = ...`&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QGDSRenderer.debug_print_cell">
+<a class="viewcode-back" href="../../../../stubs/qiskit_metal.renderers.QGDSRenderer.html#qiskit_metal.renderers.QGDSRenderer.debug_print_cell">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">debug_print_cell</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compact pretty-print summary of a gdstk Cell.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">write_svg</span><span class="p">(</span><span class="s2">&quot;test_output.svg&quot;</span><span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">SVG</span><span class="p">,</span> <span class="n">display</span>
+            <span class="n">display</span><span class="p">(</span><span class="n">SVG</span><span class="p">(</span><span class="s2">&quot;test_output.svg&quot;</span><span class="p">))</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== </span><span class="si">{</span><span class="n">cell</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> ===&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Bounding box</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bbox</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">bounding_box</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">bbox</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;bbox: </span><span class="si">{</span><span class="n">bbox</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Paths</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;paths:&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">paths</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">paths</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">paths</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2"> (pts=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">points</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Polygons</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;polygons:&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">polygons</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">polygons</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">poly</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">polygons</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - poly(n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">poly</span><span class="o">.</span><span class="n">points</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)</span>
+
+        <span class="c1"># References</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;refs:&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">references</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">references</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">references</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">r</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Properties</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;props:&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cell</span><span class="o">.</span><span class="n">properties</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">properties</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">obj</span><span class="p">,</span> <span class="n">props</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">props</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=== end ===</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QGDSRenderer.debug_summarize_gds_library">
+<a class="viewcode-back" href="../../../../stubs/qiskit_metal.renderers.QGDSRenderer.html#qiskit_metal.renderers.QGDSRenderer.debug_summarize_gds_library">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">debug_summarize_gds_library</span><span class="p">(</span><span class="n">lib</span><span class="p">:</span> <span class="n">gdstk</span><span class="o">.</span><span class="n">Library</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print a concise summary report for a gdstk.Library.</span>
+
+<span class="sd">        The summary includes:</span>
+<span class="sd">        - Library metadata (name, unit, precision, number of cells).</span>
+<span class="sd">        - Cell names and whether they have geometry.</span>
+<span class="sd">        - Per (layer, datatype) statistics:</span>
+<span class="sd">            - number of polygons</span>
+<span class="sd">            - number of paths</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lib: Loaded gdstk.Library instance.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            .. code-block:: python</span>
+
+<span class="sd">                import gdstk</span>
+
+<span class="sd">                lib = gdstk.read_gds(&quot;awesome_design.gds&quot;)</span>
+<span class="sd">                summarize_gds_library(lib)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+            <span class="n">write_library_overview_svg</span><span class="p">(</span><span class="n">lib</span><span class="p">,</span> <span class="s2">&quot;test_output.svg&quot;</span><span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">SVG</span><span class="p">,</span> <span class="n">display</span>
+            <span class="n">display</span><span class="p">(</span><span class="n">SVG</span><span class="p">(</span><span class="s2">&quot;test_output.svg&quot;</span><span class="p">))</span>
+
+        <span class="c1"># Basic library info</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== GDS LIBRARY SUMMARY ===&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;name:      </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">lib</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="kc">None</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unit:      </span><span class="si">{</span><span class="n">lib</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;precision: </span><span class="si">{</span><span class="n">lib</span><span class="o">.</span><span class="n">precision</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cells:     </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lib</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Cell list</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">CELLS:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">lib</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+            <span class="n">has_geom</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">polygons</span> <span class="ow">or</span> <span class="n">cell</span><span class="o">.</span><span class="n">paths</span> <span class="ow">or</span> <span class="n">cell</span><span class="o">.</span><span class="n">references</span><span class="p">)</span>
+            <span class="n">bbox</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">bounding_box</span><span class="p">()</span>
+            <span class="n">bbox_str</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span> <span class="k">if</span> <span class="n">bbox</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">bbox</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">cell</span><span class="o">.</span><span class="n">name</span><span class="si">:</span><span class="s2">30s</span><span class="si">}</span><span class="s2"> geom=</span><span class="si">{</span><span class="n">has_geom</span><span class="si">}</span><span class="s2"> bbox=</span><span class="si">{</span><span class="n">bbox_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Collect per (layer, datatype) stats</span>
+        <span class="n">layer_stats</span><span class="p">:</span> <span class="n">DictType</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+                              <span class="n">DictType</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="p">{</span>
+                                  <span class="s2">&quot;polygons&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                  <span class="s2">&quot;paths&quot;</span><span class="p">:</span> <span class="mi">0</span>
+                              <span class="p">})</span>
+
+        <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">lib</span><span class="o">.</span><span class="n">cells</span><span class="p">:</span>
+            <span class="c1"># Polygons</span>
+            <span class="k">for</span> <span class="n">poly</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">polygons</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">poly</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span> <span class="n">poly</span><span class="o">.</span><span class="n">datatype</span><span class="p">)</span>
+                <span class="n">layer_stats</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;polygons&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c1"># Paths (FlexPath / RobustPath)</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">cell</span><span class="o">.</span><span class="n">paths</span><span class="p">:</span>
+                <span class="c1"># FlexPath / RobustPath can have multiple parallel elements</span>
+                <span class="c1"># with potentially multiple layers; treat each layer separately.</span>
+                <span class="n">layers</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;layers&quot;</span><span class="p">,</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;layer&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
+                <span class="n">datatypes</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;datatypes&quot;</span><span class="p">,</span>
+                                    <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;datatype&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)])</span>
+
+                <span class="c1"># Normalize to lists of same length</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layers</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                    <span class="n">layers</span> <span class="o">=</span> <span class="p">[</span><span class="n">layers</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datatypes</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                    <span class="n">datatypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">datatypes</span><span class="p">]</span>
+
+                <span class="c1"># Pair up safely</span>
+                <span class="k">for</span> <span class="n">lyr</span><span class="p">,</span> <span class="n">dt</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">layers</span><span class="p">,</span> <span class="n">datatypes</span><span class="p">):</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lyr</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">dt</span><span class="p">))</span>
+                    <span class="n">layer_stats</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># If lib.layers_and_datatypes() is available, we can cross-check:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lad</span> <span class="o">=</span> <span class="n">lib</span><span class="o">.</span><span class="n">layers_and_datatypes</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">lad</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">LAYER / DATATYPE USAGE:&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">layer_stats</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  (no geometry found)&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  layer  dtype   polys   paths&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  -----  -----   -----   -----&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">dtype</span><span class="p">),</span> <span class="n">counts</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">layer_stats</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">layer</span><span class="si">:</span><span class="s2">5d</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">dtype</span><span class="si">:</span><span class="s2">5d</span><span class="si">}</span><span class="s2">   &quot;</span>
+                      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">&#39;polygons&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">5d</span><span class="si">}</span><span class="s2">   </span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">&#39;paths&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">5d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">lad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Show the raw set from lib.layers_and_datatypes() for comparison</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">lib.layers_and_datatypes():&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">layer</span><span class="p">,</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">lad</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  (layer=</span><span class="si">{</span><span class="n">layer</span><span class="si">}</span><span class="s2">, datatype=</span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== END SUMMARY ===</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">write_library_overview_svg</span><span class="p">(</span><span class="n">lib</span><span class="p">:</span> <span class="n">gdstk</span><span class="o">.</span><span class="n">Library</span><span class="p">,</span>
+                               <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;library_overview.svg&quot;</span><span class="p">,</span>
+                               <span class="n">background</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+                               <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write a single SVG that references all cells in a library.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        lib: GDS library to export.</span>
+<span class="sd">        filename: Output SVG filename.</span>
+<span class="sd">        background: SVG background color, or None for transparent.</span>
+<span class="sd">        scale: Coordinate scaling factor applied when writing SVG.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">top</span> <span class="o">=</span> <span class="n">gdstk</span><span class="o">.</span><span class="n">Cell</span><span class="p">(</span><span class="s2">&quot;LIB_OVERVIEW&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">lib</span><span class="o">.</span><span class="n">top_level</span><span class="p">():</span>  <span class="c1"># for cell in lib.cells:</span>
+        <span class="n">top</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">gdstk</span><span class="o">.</span><span class="n">Reference</span><span class="p">(</span><span class="n">cell</span><span class="p">))</span>
+    <span class="n">top</span><span class="o">.</span><span class="n">write_svg</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">background</span><span class="o">=</span><span class="n">background</span><span class="p">,</span> <span class="n">scaling</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span>
 </pre></div>
         </article>
       </div>

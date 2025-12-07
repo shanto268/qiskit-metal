@@ -595,6 +595,40 @@ renderer needs to update custom columns and values within QDesign.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="qiskit_metal.renderers.QGDSRenderer.debug_print_cell">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">debug_print_cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qiskit_metal/renderers/renderer_gds/gds_renderer.html#QGDSRenderer.debug_print_cell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qiskit_metal.renderers.QGDSRenderer.debug_print_cell" title="Link to this definition">¶</a></dt>
+<dd><p>Compact pretty-print summary of a gdstk Cell.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qiskit_metal.renderers.QGDSRenderer.debug_summarize_gds_library">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">debug_summarize_gds_library</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Library</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/qiskit_metal/renderers/renderer_gds/gds_renderer.html#QGDSRenderer.debug_summarize_gds_library"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qiskit_metal.renderers.QGDSRenderer.debug_summarize_gds_library" title="Link to this definition">¶</a></dt>
+<dd><p>Print a concise summary report for a gdstk.Library.</p>
+<p>The summary includes:
+- Library metadata (name, unit, precision, number of cells).
+- Cell names and whether they have geometry.
+- Per (layer, datatype) statistics:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>number of polygons</p></li>
+<li><p>number of paths</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>lib</strong> – Loaded gdstk.Library instance.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">gdstk</span>
+
+<span class="n">lib</span> <span class="o">=</span> <span class="n">gdstk</span><span class="o">.</span><span class="n">read_gds</span><span class="p">(</span><span class="s2">&quot;awesome_design.gds&quot;</span><span class="p">)</span>
+<span class="n">summarize_gds_library</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="qiskit_metal.renderers.QGDSRenderer.export_to_gds">
 <span class="sig-name descname"><span class="pre">export_to_gds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">highlight_qcomponents</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/qiskit_metal/renderers/renderer_gds/gds_renderer.html#QGDSRenderer.export_to_gds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qiskit_metal.renderers.QGDSRenderer.export_to_gds" title="Link to this definition">¶</a></dt>
 <dd><p>Use the design which was used to initialize this class. The
@@ -693,6 +727,26 @@ integer, specifies which of these 3 cases applies.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="qiskit_metal.renderers.QGDSRenderer.import_junction_gds_file">
+<span class="sig-name descname"><span class="pre">import_junction_gds_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lib</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Library</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/qiskit_metal/renderers/renderer_gds/gds_renderer.html#QGDSRenderer.import_junction_gds_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qiskit_metal.renderers.QGDSRenderer.import_junction_gds_file" title="Link to this definition">¶</a></dt>
+<dd><p>Import the file which contains all junctions for design.</p>
+<p>If the file has already been imported, just return True.</p>
+<p>When the design has junctions on multiple chips,
+we only need to import the file once to get all of the junction cells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lib</strong> – Main GDS library used by this renderer.</p></li>
+<li><p><strong>directory_name</strong> – Directory path where the junction GDS file is expected.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the file was imported (or was already imported), False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="qiskit_metal.renderers.QGDSRenderer.load">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#qiskit_metal.renderers.QGDSRenderer.load" title="Link to this definition">¶</a></dt>
 <dd><p>Load the renderer and register all its extensions. Only performed
@@ -751,6 +805,16 @@ cls.element_extensions.</p>
 <dt class="sig sig-object py" id="qiskit_metal.renderers.QGDSRenderer.render_design">
 <span class="sig-name descname"><span class="pre">render_design</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qiskit_metal/renderers/renderer_gds/gds_renderer.html#QGDSRenderer.render_design"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qiskit_metal.renderers.QGDSRenderer.render_design" title="Link to this definition">¶</a></dt>
 <dd><p>Export the design to GDS.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qiskit_metal.renderers.QGDSRenderer.show_imported_junction_gds">
+<span class="sig-name descname"><span class="pre">show_imported_junction_gds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qiskit_metal/renderers/renderer_gds/gds_renderer.html#QGDSRenderer.show_imported_junction_gds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qiskit_metal.renderers.QGDSRenderer.show_imported_junction_gds" title="Link to this definition">¶</a></dt>
+<dd><p>If junction gds file has been imported, show the cells in it.
+To use, you may need to first set:
+&gt;&gt;&gt; gds.options.path_filename = “../resources/Fake_Junctions.GDS”
+This function will read the file again, and print out the cells in it.
+It will also render the cells as an SVG inline if run in a Jupyter notebook.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -867,15 +931,19 @@ Defaults to None.</p></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.name"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.name</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.options"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.options</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.add_table_data_to_QDesign"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.add_table_data_to_QDesign()</span></code></a></li>
+<li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.debug_print_cell"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.debug_print_cell()</span></code></a></li>
+<li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.debug_summarize_gds_library"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.debug_summarize_gds_library()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.export_to_gds"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.export_to_gds()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.get_renderer"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.get_renderer()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.get_template_options"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.get_template_options()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.get_unique_component_ids"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.get_unique_component_ids()</span></code></a></li>
+<li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.import_junction_gds_file"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.import_junction_gds_file()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.load"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.load()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.new_gds_library"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.new_gds_library()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.parse_value"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.parse_value()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.populate_element_extensions"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.populate_element_extensions()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.render_design"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.render_design()</span></code></a></li>
+<li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.show_imported_junction_gds"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.show_imported_junction_gds()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.start"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.start()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.stop"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.stop()</span></code></a></li>
 <li><a class="reference internal" href="#qiskit_metal.renderers.QGDSRenderer.update_options"><code class="docutils literal notranslate"><span class="pre">QGDSRenderer.update_options()</span></code></a></li>

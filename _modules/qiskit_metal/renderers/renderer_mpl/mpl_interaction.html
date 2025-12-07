@@ -526,10 +526,12 @@
 <span class="sd">    - Interfere with matplotlib toolbar.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">weakref</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
@@ -692,33 +694,83 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">new_max</span><span class="p">,</span> <span class="n">new_min</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_on_mouse_wheel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mouse wheel event.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">step</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">scale_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_factor</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">scale_factor</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_factor</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_on_mouse_wheel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle mouse wheel zoom for all relevant axes.</span>
 
-        <span class="c1"># Go through all axes to enable zoom for multiple axes subplots</span>
+<span class="sd">        The zoom is centered on the mouse cursor (in data coordinates) and applied</span>
+<span class="sd">        to all x and y axes returned by :meth:`_axes_to_update`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            event: Backend-specific mouse wheel event. Expected to provide:</span>
+<span class="sd">                - ``x`` and ``y``: mouse position in display (pixel) coordinates.</span>
+<span class="sd">                - ``step``: signed scroll step (positive for zoom in, negative for</span>
+<span class="sd">                zoom out).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">&quot;step&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">event</span><span class="o">.</span><span class="n">step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale_factor</span> <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">step</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">1.0</span> <span class="o">/</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">scale_factor</span><span class="p">)</span>
+
+        <span class="c1"># Determine which axes to zoom.</span>
         <span class="n">x_axes</span><span class="p">,</span> <span class="n">y_axes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes_to_update</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
 
+        <span class="c1"># Nothing to update.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">x_axes</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">y_axes</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Use the first available axis as a reference to convert display</span>
+        <span class="c1"># coordinates (pixels) to data coordinates.</span>
+        <span class="n">axes_for_reference</span> <span class="o">=</span> <span class="n">x_axes</span> <span class="ow">or</span> <span class="n">y_axes</span>
+        <span class="n">reference_ax</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">axes_for_reference</span><span class="p">))</span>
+
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">reference_ax</span><span class="o">.</span><span class="n">transData</span><span class="o">.</span><span class="n">inverted</span><span class="p">()</span>
+        <span class="n">xdata</span><span class="p">,</span> <span class="n">ydata</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">transform_point</span><span class="p">((</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_zoom_axis_limits</span><span class="p">(</span><span class="n">ax</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">is_x</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">data_coord</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Zoom a single axis while suppressing aspect-ratio warnings.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                ax: Matplotlib axes object.</span>
+<span class="sd">                is_x: If True, zoom the x-axis; otherwise zoom the y-axis.</span>
+<span class="sd">                data_coord: Data coordinate of the mouse position along this axis.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">is_x</span><span class="p">:</span>
+                <span class="n">current_min</span><span class="p">,</span> <span class="n">current_max</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">()</span>
+                <span class="n">scale</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xscale</span><span class="p">()</span>
+                <span class="n">set_limits</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">current_min</span><span class="p">,</span> <span class="n">current_max</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()</span>
+                <span class="n">scale</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_yscale</span><span class="p">()</span>
+                <span class="n">set_limits</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span>
+
+            <span class="n">new_min</span><span class="p">,</span> <span class="n">new_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zoom_range</span><span class="p">(</span>
+                <span class="n">current_min</span><span class="p">,</span>
+                <span class="n">current_max</span><span class="p">,</span>
+                <span class="n">data_coord</span><span class="p">,</span>
+                <span class="n">scale_factor</span><span class="p">,</span>
+                <span class="n">scale</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span>
+                    <span class="s2">&quot;ignore&quot;</span><span class="p">,</span>
+                    <span class="n">message</span><span class="o">=</span>
+                    <span class="p">(</span><span class="s2">&quot;.*Ignoring fixed .* limits to fulfill fixed data aspect.*&quot;</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="n">set_limits</span><span class="p">((</span><span class="n">new_min</span><span class="p">,</span> <span class="n">new_max</span><span class="p">))</span>
+
+        <span class="c1"># Apply zoom to all x-axes.</span>
         <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">x_axes</span><span class="p">:</span>
-            <span class="n">transform</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">transData</span><span class="o">.</span><span class="n">inverted</span><span class="p">()</span>
-            <span class="n">xdata</span><span class="p">,</span> <span class="n">ydata</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">transform_point</span><span class="p">((</span><span class="n">event</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+            <span class="n">_zoom_axis_limits</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">is_x</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data_coord</span><span class="o">=</span><span class="n">xdata</span><span class="p">)</span>
 
-            <span class="n">xlim</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">()</span>
-            <span class="n">xlim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zoom_range</span><span class="p">(</span><span class="n">xlim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xlim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">xdata</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">,</span>
-                                    <span class="n">ax</span><span class="o">.</span><span class="n">get_xscale</span><span class="p">())</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xlim</span><span class="p">)</span>
-
+        <span class="c1"># Apply zoom to all y-axes.</span>
         <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">y_axes</span><span class="p">:</span>
-            <span class="n">ylim</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()</span>
-            <span class="n">ylim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zoom_range</span><span class="p">(</span><span class="n">ylim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ylim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">ydata</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">,</span>
-                                    <span class="n">ax</span><span class="o">.</span><span class="n">get_yscale</span><span class="p">())</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ylim</span><span class="p">)</span>
+            <span class="n">_zoom_axis_limits</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">is_x</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">data_coord</span><span class="o">=</span><span class="n">ydata</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">x_axes</span> <span class="ow">or</span> <span class="n">y_axes</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_draw</span><span class="p">()</span></div>
+        <span class="c1"># Redraw once after all axes are updated.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_draw</span><span class="p">()</span></div>
 
 
 

@@ -82,6 +82,7 @@ PlotCanvas
    .. automethod:: PlotCanvas.createWindowContainer
    .. automethod:: PlotCanvas.cursor
    .. automethod:: PlotCanvas.customEvent
+   .. automethod:: PlotCanvas.debug_axis_config
    .. automethod:: PlotCanvas.deleteLater
    .. automethod:: PlotCanvas.depth
    .. automethod:: PlotCanvas.destroy

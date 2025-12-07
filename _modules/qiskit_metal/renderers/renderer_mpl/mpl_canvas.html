@@ -1324,6 +1324,30 @@
                             <span class="bp">self</span><span class="o">.</span><span class="n">_annotations</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">text</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">refresh</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="PlotCanvas.debug_axis_config">
+<a class="viewcode-back" href="../../../../stubs/qiskit_metal.renderers.PlotCanvas.html#qiskit_metal.renderers.PlotCanvas.debug_axis_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">debug_axis_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print axis configuration for debugging.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_axis</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;======= AXES CONFIG =======&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;aspect:        &quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_aspect</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;adjustable:    &quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_adjustable</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;anchor:        &quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_anchor</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;box_aspect:    &quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_box_aspect</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;xlim:          &quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ylim:          &quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;xscale / yscale:&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xscale</span><span class="p">(),</span> <span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_yscale</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;data_ratio:    &quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_data_ratio</span><span class="p">())</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;data_ratio_log:&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_data_ratio_log</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;position bbox: &quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_position</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===========================&quot;</span><span class="p">)</span></div>
 </div>
 
 </pre></div>
